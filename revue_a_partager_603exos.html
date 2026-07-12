@@ -288,6 +288,7 @@ function questionHtml(x,q,qi){
   const snDiff = bq && JSON.stringify((bq.sous_notions||[]).slice().sort())!==JSON.stringify((q.sous_notions||[]).slice().sort());
   const raDiff = bq && (bq.reponse_attendue||'')!==(q.reponse_attendue||'');
   const chDiff = bq && bq.chapitre!==q.chapitre;
+  const enDiff = bq && (bq.enonce||'').trim()!==(q.enonce||'').trim();
 
   return `<div class="question">
     <div class="q-head"><span class="q-num">Q${q.position}</span>
@@ -324,7 +325,10 @@ function questionHtml(x,q,qi){
       <div class="duo-col duo-b">
         <div class="duo-head">Passe B</div>
         ${bq ? `
-          <div class="math">${echap(bq.enonce||'')}</div>
+          <div class="duo-field ${enDiff?'duo-diff':''}">
+            <div class="math">${echap(bq.enonce||'')}</div>
+            ${enDiff?`<button class="btn-ghost copy-btn" style="margin-top:6px" onclick="prendreEnonceB(${qi})">← copier cet énoncé vers la passe A</button>`:''}
+          </div>
           <div class="duo-field ${raDiff?'duo-diff':''}" style="margin-top:10px">
             <div class="duo-field-label">reponse_attendue</div>
             <div class="math" style="padding:6px 10px">${echap(mathAffiche(bq.reponse_attendue))}</div>
@@ -350,6 +354,7 @@ function cocher(qi,champ,val,cb,max){ const q=exos[idx].questions[qi]; q[champ]=
   modifie=true; }
 function prendreB(qi){ const b=exos[idx]._passe_b.questions[qi]; const q=exos[idx].questions[qi];
   q.sous_notions=(b.sous_notions||[]).slice(); q.chapitre=b.chapitre||q.chapitre; modifie=true; toast('Sous-notions de la passe B appliquées sur Q'+(qi+1)+'.'); detail(); }
+function prendreEnonceB(qi){ const b=exos[idx]._passe_b.questions[qi]; majQ(qi,'enonce',b.enonce||''); toast('Énoncé de la passe B appliqué sur Q'+(qi+1)+'.'); detail(); }
 function ajouterQ(){ const qs=exos[idx].questions; qs.push({position:qs.length+1,enonce:"",reponse_attendue:null,chapitre:exos[idx].chapitre_principal,sous_notions:[],depend_de:null,competences_transversales:[],competences_calcul:[],difficulte_question:"moyen"}); modifie=true; detail(); }
 function supprQ(qi){ const qs=exos[idx].questions; if(qs.length<=1){alert("Un exercice doit garder au moins une question.");return;}
   qs.splice(qi,1); qs.forEach((q,i)=>{q.position=i+1; if(q.depend_de) q.depend_de=q.depend_de.filter(d=>d<=qs.length&&d!==qi+1);}); modifie=true; detail(); }
