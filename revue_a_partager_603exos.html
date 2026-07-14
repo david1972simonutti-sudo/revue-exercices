@@ -104,7 +104,14 @@ window.EMBEDDED_EXOS = [{"id": "0152279580ee", "niveau": "premiere", "source": "
 <script>
 "use strict";
 const TRANSVERSALES=["chercher","modeliser","representer","raisonner","calculer","communiquer"];
-const CALCULS=["fractions","puissances","racines","calcul_litteral","proportionnalite","priorites_operatoires","signes","equations_premier_degre"];
+const CALCULS=["fractions","puissances","racines","calcul_litteral","identites_remarquables","proportionnalite","priorites_operatoires","signes","equations_premier_degre","inequations_premier_degre"];
+// Notions "classiques" de collège/2nde qui apparaissent souvent comme pré-requis DANS un exercice de
+// première, sans que la question elle-même teste un objectif du programme de première (ex : une question
+// de dérivation qui utilise Pythagore en passant). Cocher "hors_premiere" sur la question correspondante
+// dispense de choisir une sous_notion de première pour cette question précise.
+const PREREQUIS_GEOMETRIE=["pythagore","thales","trigonometrie_college","aires_volumes","symetries_translations"];
+const PREREQUIS_FONCTIONS_2NDE=["fonction_affine","fonction_carre","fonction_inverse","lecture_graphique","vecteurs_2nde","equation_droite_2nde"];
+const PREREQUIS_STATS=["statistiques_descriptives","denombrement_simple"];
 const DIFF=["facile","moyen","difficile"];
 const TYPES=["exercice_guide","probleme_ouvert","vrai_faux"];
 const ORDRE={erreur_api:0,echec_validation:1,desaccord:2,passe_unique:3,accord_partiel:4,accord_fort:5};
@@ -261,6 +268,31 @@ function topDuoHtml(x){
   </div>`;
 }
 
+// Regroupe les sous_notions de toutes les questions par chapitre : le chapitre principal de
+// l'exercice d'un côté, et tout autre chapitre touché par une question (transversal) de l'autre.
+// Les questions cochées "hors_premiere" (pré-requis de collège/2nde) sont exclues de ce calcul.
+function rollupChapitres(x){
+  const map={};
+  (x.questions||[]).forEach(q=>{
+    if(q.hors_premiere) return;
+    const ch=q.chapitre||x.chapitre_principal||'?';
+    if(!map[ch]) map[ch]=new Set();
+    (q.sous_notions||[]).forEach(sn=>map[ch].add(sn));
+  });
+  return map;
+}
+function chapitresHtml(x){
+  const map=rollupChapitres(x);
+  const principal=x.chapitre_principal||'?';
+  const snP=[...(map[principal]||[])];
+  const transversaux=Object.keys(map).filter(c=>c!==principal);
+  return `<div class="confiance-note" style="background:#f3e8ff">
+    <div><b>Chapitre principal</b> — ${echap(principal)}${snP.length?' : '+snP.map(echap).join(', '):''}</div>
+    ${transversaux.map(c=>`<div style="margin-top:4px"><b>Transversal</b> — ${echap(c)} : ${[...map[c]].map(echap).join(', ')}</div>`).join('')}
+    ${x.chapitres_secondaires&&x.chapitres_secondaires.length?`<div style="margin-top:4px;color:#6e6e73">Chapitres secondaires signalés par le tagging : ${x.chapitres_secondaires.map(echap).join(', ')}</div>`:''}
+  </div>`;
+}
+
 function detail(){
   const x = exos[idx]; if(!x) return;
   const el=document.getElementById('detail');
@@ -275,6 +307,7 @@ function detail(){
       <span style="font-size:.75rem;color:#a1a1aa">${x.source_fichier||''} — exo ${x.source_numero||''}</span>
     </div>
     <div class="confiance-note">${CONFIANCE_EXPLIC[x.confiance_pretag]||''}</div>
+    ${chapitresHtml(x)}
     ${alertes}
     ${topDuoHtml(x)}
     ${decoupageBanner(x)}
@@ -326,9 +359,17 @@ function questionHtml(x,q,qi){
         </div>
         <div class="duo-field"><div class="duo-field-label">chapitre</div>
           <select onchange="majQ(${qi},'chapitre',this.value);detail()">${opts(chapitres,q.chapitre)}</select></div>
-        <div class="duo-field"><div class="duo-field-label">sous_notions (1 à 3, dominante en premier — VITAL)</div>
+        <div class="duo-field" style="${q.hors_premiere?'opacity:.5':''}"><div class="duo-field-label">sous_notions (1 à 3, dominante en premier — VITAL, sauf si "hors programme" coché ci-dessous)</div>
           <div class="chips">${(q.sous_notions||[]).map((s,si)=>`<span class="chip">${echap(s)}<span onclick="retirerSn(${qi},${si})">&times;</span></span>`).join('')}
           ${sns.length?`<select onchange="if(this.value){ajouterSn(${qi},this.value);this.value=''}"><option value="">+ ajouter</option>${sns.map(s=>`<option>${echap(s)}</option>`).join('')}</select>`:'<i style="font-size:.7rem;color:#c2410c">référentiel non chargé</i>'}</div></div>
+        <div class="duo-field" style="${q.hors_premiere?'background:#fff7ed;border-radius:8px':''}">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" ${q.hors_premiere?'checked':''} onchange="majQ(${qi},'hors_premiere',this.checked);detail()">
+            <span><b>Cette question est un pré-requis hors programme de première</b> (ex : Pythagore, Thalès, calcul de fractions...) — ne teste pas la première elle-même, pas besoin de sous_notion.</span>
+          </label>
+          ${q.hors_premiere?`<div style="margin-top:8px"><div class="duo-field-label">quelle(s) notion(s) de collège/2nde ?</div>
+            <div class="cases">${[...PREREQUIS_GEOMETRIE,...PREREQUIS_FONCTIONS_2NDE,...PREREQUIS_STATS].map(t=>`<label><input type="checkbox" ${(q.prerequis_notions||[]).includes(t)?'checked':''} onchange="cocher(${qi},'prerequis_notions','${t}',this,4)">${t}</label>`).join('')}</div></div>`:''}
+        </div>
         <div class="duo-field"><div class="duo-field-label">depend_de (ex : 1,2) · difficulte</div>
           <input type="text" style="max-width:70px" value="${(q.depend_de||[]).join(',')}" onchange="majDepend(${qi},this.value)">
           <select onchange="majQ(${qi},'difficulte_question',this.value)">${opts(DIFF,q.difficulte_question||'moyen')}</select></div>
@@ -397,7 +438,7 @@ function rappelExportSiBesoin(){
 function valider(){
   const x=exos[idx];
   const pb=[];
-  x.questions.forEach(q=>{ if(!q.sous_notions||!q.sous_notions.length) pb.push("Q"+q.position+" sans sous_notion"); });
+  x.questions.forEach(q=>{ if(!q.hors_premiere && (!q.sous_notions||!q.sous_notions.length)) pb.push("Q"+q.position+" sans sous_notion"); });
   if(pb.length && !confirm("Attention : "+pb.join(', ')+". Valider quand même ?")) return;
   x.statut_validation='valide'; modifie=true; rappelExportSiBesoin(); suivantNonRevu();
 }
