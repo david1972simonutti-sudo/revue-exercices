@@ -368,7 +368,7 @@ function questionHtml(x,q,qi){
             <span><b>Cette question est un pré-requis hors programme de première</b> (ex : Pythagore, Thalès, calcul de fractions...) — ne teste pas la première elle-même, pas besoin de sous_notion.</span>
           </label>
           ${q.hors_premiere?`<div style="margin-top:8px"><div class="duo-field-label">quelle(s) notion(s) de collège/2nde ?</div>
-            <div class="cases">${[...PREREQUIS_GEOMETRIE,...PREREQUIS_FONCTIONS_2NDE,...PREREQUIS_STATS].map(t=>`<label><input type="checkbox" ${(q.prerequis_notions||[]).includes(t)?'checked':''} onchange="cocher(${qi},'prerequis_notions','${t}',this,4)">${t}</label>`).join('')}</div></div>`:''}
+            <div class="cases">${[...CALCULS,...PREREQUIS_GEOMETRIE,...PREREQUIS_FONCTIONS_2NDE,...PREREQUIS_STATS].map(t=>`<label><input type="checkbox" ${(q.prerequis_notions||[]).includes(t)?'checked':''} onchange="cocher(${qi},'prerequis_notions','${t}',this,4)">${t}</label>`).join('')}</div></div>`:''}
         </div>
         <div class="duo-field"><div class="duo-field-label">depend_de (ex : 1,2) · difficulte</div>
           <input type="text" style="max-width:70px" value="${(q.depend_de||[]).join(',')}" onchange="majDepend(${qi},this.value)">
