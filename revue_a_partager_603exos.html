@@ -111,7 +111,7 @@ const CALCULS=["fractions","puissances","racines","calcul_litteral","identites_r
 // dispense de choisir une sous_notion de première pour cette question précise.
 const PREREQUIS_GEOMETRIE=["pythagore","thales","trigonometrie_college","aires_volumes","symetries_translations"];
 const PREREQUIS_FONCTIONS_2NDE=["fonction_affine","fonction_carre","fonction_inverse","lecture_graphique","vecteurs_2nde","equation_droite_2nde"];
-const PREREQUIS_STATS=["statistiques_descriptives","denombrement_simple"];
+const PREREQUIS_STATS=["statistiques_descriptives","denombrement_simple","probabilites_simples"];
 const DIFF=["facile","moyen","difficile"];
 const TYPES=["exercice_guide","probleme_ouvert","vrai_faux"];
 const ORDRE={erreur_api:0,echec_validation:1,desaccord:2,passe_unique:3,accord_partiel:4,accord_fort:5};
@@ -386,10 +386,10 @@ function questionHtml(x,q,qi){
         <div class="duo-field" style="${q.hors_premiere?'background:#fff7ed;border-radius:8px':''}">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
             <input type="checkbox" ${q.hors_premiere?'checked':''} onchange="majQ(${qi},'hors_premiere',this.checked);detail()">
-            <span><b>Cette question est un pré-requis hors programme de première</b> (ex : Pythagore, Thalès, calcul de fractions...) — ne teste pas la première elle-même, pas besoin de sous_notion.</span>
+            <span><b>Cette question ne teste RIEN de première</b> (uniquement du pré-requis, ex : une sous-question de pur calcul) — dispense de sous_notion.</span>
           </label>
-          ${q.hors_premiere?`<div style="margin-top:8px"><div class="duo-field-label">quelle(s) notion(s) de collège/2nde ?</div>
-            <div class="cases">${[...CALCULS,...PREREQUIS_GEOMETRIE,...PREREQUIS_FONCTIONS_2NDE,...PREREQUIS_STATS].map(t=>`<label><input type="checkbox" ${(q.prerequis_notions||[]).includes(t)?'checked':''} onchange="cocher(${qi},'prerequis_notions','${t}',this,4)">${t}</label>`).join('')}</div></div>`:''}
+          <div style="margin-top:8px"><div class="duo-field-label">notion(s) de collège/2nde mobilisée(s) dans cette question (coche que "hors programme" soit coché ou non — une question peut tester la première ET s'appuyer sur du pré-requis)</div>
+            <div class="cases">${[...CALCULS,...PREREQUIS_GEOMETRIE,...PREREQUIS_FONCTIONS_2NDE,...PREREQUIS_STATS].map(t=>`<label><input type="checkbox" ${(q.prerequis_notions||[]).includes(t)?'checked':''} onchange="cocher(${qi},'prerequis_notions','${t}',this,4)">${t}</label>`).join('')}</div></div>
         </div>
         <div class="duo-field"><div class="duo-field-label">depend_de (ex : 1,2) · difficulte</div>
           <input type="text" style="max-width:70px" value="${(q.depend_de||[]).join(',')}" onchange="majDepend(${qi},this.value)">
