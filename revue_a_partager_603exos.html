@@ -472,16 +472,22 @@ function suivantNonRevu(){ const i=exos.findIndex((x,i2)=>i2>idx&&x.statut_valid
 function nav(d){ idx=Math.max(0,Math.min(exos.length-1,idx+d)); tout(); }
 
 // ── export ──
+// iPadOS (depuis iOS 13) fait croire qu'il est un Mac dans le user-agent ("Macintosh") par défaut —
+// on distingue un vrai Mac d'un iPad via maxTouchPoints (un Mac normal = 0, un iPad = toujours > 1).
+function estIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+}
 async function exporter(){
   depuisDernierExport=0;
   const data=JSON.stringify(exos,null,2);
   const blob=new Blob([data],{type:'application/json'});
 
-  // Sur iPad/iPhone (Safari), le vieux truc <a download>+blob ne dépose pas toujours le fichier dans
-  // "Fichiers" (bug WebKit connu). On passe d'abord par le partage natif iOS : elle choisit
-  // "Enregistrer dans Fichiers", Mail, Messages ou AirDrop directement.
+  // Sur iPad/iPhone (Safari) UNIQUEMENT : le vieux truc <a download>+blob ne dépose pas toujours le
+  // fichier dans "Fichiers" (bug WebKit connu). On passe par le partage natif iOS à la place.
+  // Sur Mac/PC, le partage natif existe aussi mais complique inutilement un téléchargement qui marche
+  // très bien directement — on ne le déclenche donc QUE sur iPhone/iPad.
   let partageOk=false;
-  if(window.File && navigator.canShare){
+  if(estIOS() && window.File && navigator.canShare){
     try{
       const file=new File([blob],'revue_export.json',{type:'application/json'});
       if(navigator.canShare({files:[file]})){
@@ -495,7 +501,7 @@ async function exporter(){
   }
   if(partageOk) return;
 
-  // Secours (Mac/PC, ou iPad si le partage natif échoue) : ancien téléchargement via <a download>.
+  // Mac/PC (par défaut), ou iPad si le partage natif échoue : téléchargement classique via <a download>.
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='revue_export.json'; document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(a.href); modifie=false;
@@ -503,7 +509,7 @@ async function exporter(){
 
   // Filet de sécurité supplémentaire pour iPad : si même le téléchargement classique échoue
   // silencieusement, on propose aussi le texte brut à copier-coller (toujours fiable, aucune API requise).
-  if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
+  if(estIOS()){
     montrerExportTexte(data);
   }
 }
